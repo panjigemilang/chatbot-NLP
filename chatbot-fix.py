@@ -32,14 +32,6 @@ commonwords = ["the", "a", "an", "is", "are", "were", "."]
 questionwords = ["who", "what", "where", "when", "why", "how", "whose", "which", "whom"]
 
 
-def setToList(arr):
-    list = []
-    for item in arr:
-        list.append(int(item.tolist()))
-
-    return list
-
-
 def preprocess(sent):
     sent = sent.translate(str.maketrans("", "", string.punctuation))
 
@@ -70,8 +62,6 @@ def processquestion(qwords):
     questionword = ""
     qidx = -1
 
-    #     qwords = preprocess(qwords)
-
     for (idx, word) in enumerate(qwords):
         if word.lower() in questionwords:
             questionword = word.lower()
@@ -96,66 +86,32 @@ def processquestion(qwords):
         type = "PLACE"
     elif questionword == "when":
         type = "TIME"
-    elif questionword == "how":
-        if target[0] in ["few", "little", "much", "many"]:
-            type = "QUANTITY"
-            target = target[1:]
-        elif target[0] in ["young", "old", "long"]:
-            type = "TIME"
-            target = target[1:]
-
-    # Trim possible extra helper verb
-    if questionword == "which":
-        target = target[1:]
-    if target[0] in yesnowords:
-        target = target[1:]
 
     # Return question data
     return (type, target)
 
 
 def questionModel(question):
-    #    Removing stopword & punctuation
-    # tokenized = preprocess(question)
+    # get type n target from question
     (type, target) = processquestion(preprocess(question))
 
-    # Read doc
+    # Read document train
     with open("train.txt", "r") as f:
         doc = f.read()
 
     # Get sentence keywords
     searchwords = set(target)
 
-    # Word Count
+    # list match
     relevant = word_count(target, doc, searchwords).most_common(3)  # list matched
-    print(relevant)
-
-    #    NER
-    # doc = nlp(question)
-    # namedEntity = [(X, X.ent_iob_, X.ent_type_) for X in doc]
-
-    # Pos-Tag
-    # NER_type = ["person", "gpe", "org", "date", "time"]
-    # NER_data = []
-
-    # Q-type
-    # NER_data.append(str(namedEntity[0][0]).lower())
-
-    # nertype = [word[2] for word in namedEntity if word[2].lower() in NER_type]
-    # NER_data.append(nertype)
+    # print(relevant)
 
     return answerModel(type, relevant)
-    # return type, relevant
 
 
 def answerModel(type, relevant):
-
-    # ans = [('Raden Ajeng Kartini was a leading feminist of women emancipation in Indonesia.', 3), ('Raden Kartini was born on 21 April 1879 in Jepara.', 2), ('Ibu Kartini was very concerned because of education in Indonesia especially for women.', 1)]
-
-    # NER for ans
     sentences = []
     for idx, word in enumerate(relevant):
-        # print(word[0])
         sentences.append(word[0])
 
     listwords = []
@@ -163,8 +119,6 @@ def answerModel(type, relevant):
         doc = nlp(sentence)
         listwords.append([(X, X.ent_type_) for X in doc])
 
-    # listwords = list(itertools.chain.from_iterable(listwords))
-    # print(listwords)
     countList = []
     for i, text in enumerate(listwords):
         count = 0
@@ -175,56 +129,24 @@ def answerModel(type, relevant):
         countList.append(count)
 
     winner = countList.index(max(countList))
-
+    winner = sentence[winner]
     print(sentences[winner])
-    # for sentence in sentences:
-    #     print(len(sentence))
-    # print(listwords)
 
-    # counting NER in listwords
-
-    # namedEntity = [(X, X.ent_iob_, X.ent_type_) for X in doc]
-    # print(namedEntity)
+    return sentence
 
 
 if __name__ == "__main__":
     # =============================================================================
     #    User input
     # =============================================================================
-    #    kata_pencarian = str(input())
-    question = "When was Raden Ajeng Kartini born?"
-
-    """
-    5 W + 1 H
-    What/WP When/WRB Where/WRB Who/WP Why/WRB
-    How/WRB
-    """
+    print("Masukkan pertanyaan : ")
+    question = str(input())
 
     # =============================================================================
-    #     preprocessing
+    #     Answer Processing
     # =============================================================================
     questionModel(question)
 
-    # print("ini qm : ", qm)
-    # print("ini question processed : ", candidateAns)
-
     # =============================================================================
-    #     answer sementara
+    #     Evaluasi
     # =============================================================================
-    a1 = [
-        "Raden Ajeng Kartini was a prominent Indonesian national heroine from Java.",
-        "Friday, 12 July 1998",
-    ]
-
-    # answerModel(qm, candidateAns)
-
-    jumlah_pencarian = 5
-    bahasa = "en"
-
-    # print("Question : ", question)
-    # keyword, html = scraping(q, jumlah_pencarian, bahasa)
-    # print("html ", html)
-    # hasil = parse_html(keyword, html)
-    # print(hasil)
-
-    # print(hasil[0])

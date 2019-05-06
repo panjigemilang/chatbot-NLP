@@ -1,0 +1,45 @@
+
+
+def scraping(kata_pencarian, jumlah_pencarian, bahasa):
+    assert isinstance(kata_pencarian, str), "Kata pencarian harus String."
+    assert isinstance(jumlah_pencarian, int), "Jumlah hasil harus integer."
+    escaped_kata_pencarian = kata_pencarian.replace(" ", "+")
+
+    google_url = "https://www.google.com/search?q={}&num={}&hl={}".format(
+        escaped_kata_pencarian, jumlah_pencarian, bahasa
+    )
+
+    response = requests.get(google_url, headers=USER_AGENT)
+    response.raise_for_status()
+
+    return kata_pencarian, response.text
+
+
+def parse_html(keyword, html):
+    soup = BeautifulSoup(html, "html.parser")
+
+    doc = []
+    rank = 1
+    hasil_block = soup.find_all("div", attrs={"class": "g"})
+
+    for parser in hasil_block:
+        link = parser.find("a", href=True)
+        judul = parser.find("h3")
+        deskripsi = parser.find("span", attrs={"class": "st"})
+        if link and judul:
+            link = link["href"]
+            judul = judul.get_text()
+            if deskripsi:
+                deskripsi = deskripsi.get_text()
+            if link != "#":
+                doc.append(
+                    {
+                        "keyword": keyword,
+                        "rank": rank,
+                        "judul": judul,
+                        "deskripsi": deskripsi,
+                    }
+                )
+                rank += 1
+
+    return doc
